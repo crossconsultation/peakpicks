@@ -1,0 +1,43 @@
+name: 🔄 Weekly PeakPicks Store Update
+
+on:
+  # Runs every Monday at 9:00 AM Eastern Time (13:00 UTC)
+  schedule:
+    - cron: '0 13 * * 1'
+
+  # Also lets you trigger it manually from GitHub with one click
+  workflow_dispatch:
+
+jobs:
+  update-store:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Check out your repository
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Step 3: Run the site generator script
+      - name: 🏗️ Generate fresh index.html
+        run: python scripts/generate_site.py
+
+      # Step 4: Commit and push the new index.html to GitHub
+      - name: 📤 Commit updated site
+        run: |
+          git config --global user.name "PeakPicks Bot"
+          git config --global user.email "bot@peakpicks.com"
+          git add index.html
+          git diff --staged --quiet || git commit -m "🔄 Weekly store update - $(date +'%B %d, %Y')"
+          git push
+
+      # Step 5: Trigger Netlify to redeploy with the new file
+      - name: 🚀 Deploy to Netlify
+        run: |
+          curl -s -X POST "${{ secrets.NETLIFY_BUILD_HOOK }}"
+          echo "✅ Netlify deploy triggered successfully!"
